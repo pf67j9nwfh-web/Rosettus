@@ -1,0 +1,26 @@
+FSPathMakeRef(dir)       0
+FSCreateFileUnicode      0
+FSOpenFork               0
+FSWriteFork              0 11
+FSGetForkSize            11
+FSReadFork               0 'world'
+FSReadFork(eof)          -39 5
+FSGetCatalogInfo         0 size 11 flags 0 name-len 8
+FSSetCatalogInfo         0
+type/creator             TEXT/ttxt
+FSOpenResFile            1 err 0
+AddResource              0
+Count1Resources          1 1
+Get1Resource             6 01020304abcd
+GetResInfo               128 TEST diff
+stat(rsrc)               0 1
+FSNewAlias               0
+FSResolveAlias           0 same 1
+FSRenameUnicode          0
+FSRefMakePath(tail)      /renamed
+FSGetCatalogInfoBulk     -1417 n=1
+FSDeleteObject           0
+FSFindFolder(prefs)      0 /Library/Preferences
+FSFindFolder(temp)       0
+FSGetVolumeInfo(1)       0 blocksize-nonzero 1
+Gestalt(sysv)            1068

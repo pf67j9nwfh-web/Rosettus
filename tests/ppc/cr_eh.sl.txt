@@ -1,0 +1,13 @@
+mtcrf 80 -> cr 10000002
+mtcrf 40 -> cr 02000002
+mtcrf 20 -> cr 00300002
+mtcrf 10 -> cr 00040002
+mtcrf 08 -> cr 00005002
+mtcrf 04 -> cr 00000602
+mtcrf 02 -> cr 00000072
+mtcrf 01 -> cr 00000008
+mtcrf 38 -> cr 00345002
+mtcrf ff -> cr 12345678
+mtcrf 0c -> cr 00005602
+cr2-4 after a plain call: 234 (expect 234)
+cr2-4 in a catch block:   234 (expect 234)

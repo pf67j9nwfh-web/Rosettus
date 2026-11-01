@@ -1,0 +1,12 @@
+NewGWorld              0
+GWorld                 rb 1 sum 6ae220fb px(10,10) ffff0000
+GetCPixel              ffff 0000 0000
+region                 0,0,20,20 rect 0
+CGBitmapContext        1
+ctm                    1 1 0 0
+text-advance           24.00 40.00
+CG sum                 3747db23 px(10,10) 0080ffff
+CGImage                64 x 64 bpc 8 bpp 32 info 1
+rects                  0 -5 15 15 / 5 0 5 5
+affine                 0.796314 4.071024
+ATSU bounds            0 found 1 width 62.03 asc 14.00 desc 4.00

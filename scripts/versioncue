@@ -1,0 +1,29 @@
+#!/bin/bash
+# Version Cue CS2 service launcher/control. Adobe code stays in the user's installation.
+set -e
+HERE="$(cd "$(dirname "$0")" && pwd -P)"
+ROOT="$(dirname "$HERE")"
+export ROSETTUS_ROOT="$ROOT"
+export VC_NULLAGENT="$HERE/nullchecks.jar"
+export OAH_NO_CPPATCH="${OAH_NO_CPPATCH:-1}"
+export VC_APP_ROOT=$(/usr/bin/python - "$HOME" <<'PY'
+import os, plistlib, subprocess, sys
+settings = {}
+for p in ['/Library/Preferences/com.adobe.versioncueCS2.plist', os.path.join(sys.argv[1], 'Library/Preferences/com.adobe.versioncueCS2.plist')]:
+    if os.path.isfile(p):
+        settings.update(plistlib.readPlistFromString(subprocess.check_output(['/usr/bin/plutil','-convert','xml1','-o','-',p])))
+print(os.path.realpath(settings.get('VersionCuePath', '/Applications/Adobe Version Cue CS2')))
+PY
+)
+export XYLD_LIBRARY_PATH="$VC_APP_ROOT/bin${XYLD_LIBRARY_PATH:+:$XYLD_LIBRARY_PATH}"
+if [ "$(id -u)" = 0 ]; then LOGDIR=/Library/Logs/Rosettus; else LOGDIR="$HOME/Library/Logs/Rosettus"; fi
+mkdir -p "$LOGDIR"
+export VC_CONTROLLER_PIDFILE="$LOGDIR/versioncue-controller.pid"
+case "${1:-status}" in
+  controller) exec "$ROOT/rosettus" "$HERE/controller" com.adobe.versioncueCS2 "$HERE/versioncue";;
+  run) exec "$ROOT/rosettus" "$HERE/VersionCueCS2.app" -service;;
+  wake-db) exec /usr/bin/python "$ROOT/tools/versioncue_wake_db.py" "$2";;
+  start|stop|restart) exec "$ROOT/rosettus" "$HERE/VersionCueCS2.app" "-$1" -sync;;
+  status) exec "$ROOT/rosettus" "$HERE/VersionCueCS2.app" -status -v;;
+  *) echo "usage: $0 start|stop|restart|status" >&2; exit 2;;
+esac

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+<key>CFBundleExecutable</key><string>TestPane</string>
+<key>CFBundleIdentifier</key><string>io.github.rosettus.testprefpane</string>
+<key>CFBundleName</key><string>Rosettus Test Pane</string>
+<key>CFBundlePackageType</key><string>BNDL</string>
+<key>NSPrincipalClass</key><string>RosettusTestPane</string>
+</dict></plist>

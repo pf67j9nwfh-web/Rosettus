@@ -1,0 +1,26 @@
+uppercase              HELLO, ROSETTA ÉTÉ — CAFÉ
+fold                   hello, rosetta ete — cafe
+length                 25
+find                   21,4
+compare-ci             -1
+compare-num            1
+macroman               25 48656c6c6f2c20526f7365747461208e748e20d1
+split                  <CFArray @ [@]>{type = mutable-small, count = 4, values = ( 	0 : <CFString @ [@]>{contents = "a"} 	1 : <CFString @ [@]>{contents = "b"} 	2 : <CFString @ [@]>{contents = ""} 	3 : <CFString @ [@]>{contents = "c"} )}
+number                 <CFNumber @ [@]>{value = +3.14159265358979311600, type = kCFNumberFloat64Type}
+int64                  <CFNumber @ [@]>{value = +81985529216486895, type = kCFNumberSInt64Type}
+int64->32              -1985229329
+gregorian              2010-07-05 05:20:00.500 dow 1
+ny-offset              -14400 1
+plist-xml              344 bytes
+plist-equal            1
+plist-binary           104 bytes
+url                    <CFURL @ [@]>{type = 0, string = /Applications/Some App.app/Contents/, encoding = 134217984, base = (null)}
+url-last               Contents
+url-hfs                <CFURL @ [@]>{type = 1, string = Macintosh HD:Users:jr:Doc, encoding = 134217984, base = (null)}
+url-host               68k.news
+url-query              a=1&b=%2@
+prefs-sync             1
+prefs-read             <CFNumber @ [@]>{value = +7, type = kCFNumberSInt32Type}
+uuid                   6875..67
+charset                1 0
+numfmt-en              1,234,567.891

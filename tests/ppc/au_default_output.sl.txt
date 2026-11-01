@@ -1,0 +1,14 @@
+AudioHardwareGetProperty(DefaultOutputDevice) -> 0, device nonzero
+AudioDeviceGetProperty(NominalSampleRate) -> 0, plausible rate
+AudioDeviceGetProperty(BufferFrameSize) -> 0, plausible size
+FindNextComponent(auou/def) -> found
+OpenAComponent -> 0
+AudioUnitGetProperty(StreamFormat, output) -> 0
+AudioUnitSetProperty(StreamFormat, input) -> 0
+AudioUnitSetProperty(SetRenderCallback) -> 0
+AudioUnitInitialize -> 0
+AudioUnitSetParameter(Volume) -> 0
+AudioOutputUnitStart -> 0
+render callbacks in 1.5 s: many (audio running)
+AudioOutputUnitStop -> 0
+CloseComponent -> 0

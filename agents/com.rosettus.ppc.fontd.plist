@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>OAH_AGENT</key>
+		<string>com.rosettus.ppc.fontd</string>
+	</dict>
+	<key>Label</key>
+	<string>com.rosettus.ppc.fontd</string>
+	<key>MachServices</key>
+	<dict>
+		<key>com.rosettus.ppc.FontObjectsServer</key>
+		<true/>
+		<key>com.rosettus.ppc.FontServer</key>
+		<true/>
+	</dict>
+	<key>ProgramArguments</key>
+	<array>
+		<string>__ROOT__/rosettus</string>
+		<string>__ROOT__/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Support/fontd</string>
+	</array>
+	<key>StandardErrorPath</key>
+	<string>/tmp/rosettus_fontd.log</string>
+	<key>StandardOutPath</key>
+	<string>/tmp/rosettus_fontd.log</string>
+</dict>
+</plist>

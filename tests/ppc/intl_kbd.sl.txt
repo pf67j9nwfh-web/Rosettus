@@ -1,0 +1,17 @@
+smVersion              4096
+smSysScript            0
+smKeyScript            0
+smKCHRCache            non-null
+smRegionCode           0
+smKeyCache             NULL
+smDoubleByte           255
+KCHR                   version 0
+smScriptKeys(roman)    0
+KLGetCurrentLayout     0 ok
+layout name            U.S.
+KCHRData               0 non-null
+uchrData               0 non-null
+kind                   2
+TIS current            com.apple.keylayout.US
+itlk 0                 present
+itl0                   present

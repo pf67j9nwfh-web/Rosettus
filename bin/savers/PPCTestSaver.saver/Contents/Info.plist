@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+	<key>CFBundleExecutable</key><string>PPCTestSaver</string>
+	<key>CFBundleIdentifier</key><string>io.github.rosettus.ppctestsaver</string>
+	<key>CFBundleName</key><string>PPC Test Saver</string>
+	<key>CFBundlePackageType</key><string>BNDL</string>
+	<key>NSPrincipalClass</key><string>PPCTestSaver</string>
+</dict></plist>

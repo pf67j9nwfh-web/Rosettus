@@ -1,0 +1,129 @@
+#!/bin/bash
+# Run a PowerPC Mach-O executable on Mojave using Snow Leopard's Rosetta.
+# Usage: rosetta /path/to/ppc_binary [args...]
+ROOT="$(cd "$(dirname "$0")" && pwd -P)"
+F=$ROOT/System/Library/Frameworks
+export XYLD_DISABLE_DOFS=1
+export XYLD_LIBRARY_PATH="$ROOT/usr/lib:$ROOT/usr/lib/system:$ROOT/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A:$ROOT/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Resources:$ROOT/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ImageIO.framework/Versions/A/Resources:$ROOT/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries${XYLD_LIBRARY_PATH:+:$XYLD_LIBRARY_PATH}"
+[ -d "$ROOT/usr/X11/lib" ] && export XYLD_LIBRARY_PATH="$XYLD_LIBRARY_PATH:$ROOT/usr/X11/lib"   # Snow Leopard X11 (PowerPC X11 apps)
+export XYLD_FRAMEWORK_PATH="$F:$ROOT/System/Library/PrivateFrameworks:$ROOT/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks:$ROOT/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks:$ROOT/System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks:$ROOT/System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/Print.framework/Versions/A/Frameworks:$ROOT/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks:$ROOT/System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks:$ROOT/System/Library/Frameworks/OpenDirectory.framework/Versions/A/Frameworks:$ROOT/System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Frameworks${XYLD_FRAMEWORK_PATH:+:$XYLD_FRAMEWORK_PATH}"
+# every umbrella framework's sub-framework folder (Quartz, WebKit, ...) is a search location too
+for d in "$ROOT"/System/Library/Frameworks/*.framework/Versions/A/Frameworks "$ROOT"/System/Library/PrivateFrameworks/*.framework/Versions/A/Frameworks; do
+  case ":$XYLD_FRAMEWORK_PATH:" in *":$d:"*) ;; *) XYLD_FRAMEWORK_PATH="$XYLD_FRAMEWORK_PATH:$d";; esac
+done
+# Guest-toolbox mode: the PowerPC HIToolbox/QD/CoreGraphics run unpatched from gtb/,
+# with only their WindowServer (CGS) calls bridged to Mojave (oah_cgs.h).
+# It is the default (every app wrapper used it); OAH_NO_GTB=1 runs the bridged main frameworks instead.
+[ -z "$OAH_NO_GTB" ] && export OAH_GTB=${OAH_GTB:-1}
+if [ -n "$OAH_GTB" ]; then export XYLD_FRAMEWORK_PATH="$ROOT/gtb/Frameworks:$XYLD_FRAMEWORK_PATH"; fi
+# Retina: windows at 2x when chosen in Rosettus Launcher (File menu) or with OAH_HIDPI=1
+if [ -z "$OAH_HIDPI" ] && [ "$(defaults read com.rosettus Retina 2>/dev/null)" = 1 ]; then
+  export OAH_HIDPI=1 OAH_CUISCALE=${OAH_CUISCALE:-1}
+fi
+export OAH_RETSTUB_OFF=${OAH_RETSTUB_OFF:-0x1aa154}   # HIToolbox DebugPrintMenu, patched to twi 31,r0,5; blr
+# A .app bundle may be given instead of its executable.
+if [ -d "$1" ]; then
+  B="${1%/}"; X=""
+  for pl in "$B/Contents/Info.plist" "$B/Contents/Info-macos.plist"; do
+    # a patched Classic (CFM) app: Info.plist names the native stub; RosettaOriginalExecutable the PEF file
+    [ -f "$pl" ] && X=$(/usr/libexec/PlistBuddy -c "Print :RosettaOriginalExecutable" "$pl" 2>/dev/null) && [ -n "$X" ] && break
+    [ -f "$pl" ] && X=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$pl" 2>/dev/null) && [ -n "$X" ] && break
+  done
+  [ -z "$X" ] && X=$(basename "$B" .app)
+  # A bundle reached through a symlink (apps/Keynote.app -> /Applications/iWork '09/Keynote.app) runs
+  # from its real path. Otherwise CFBundle resolves the link for the main bundle's path while other
+  # paths keep it: Keynote's theme chooser compares the two and showed no theme previews. A patched
+  # CFM bundle also needs it (through the link the guest CFBundle took the native stub for the
+  # executable: cfragExecFileRefErr). OAH_KEEP_BUNDLE_LINK=1 keeps the link.
+  if [ -L "$B" ] && [ -z "$OAH_KEEP_BUNDLE_LINK" ]; then B=$(cd "$B" && pwd -P); fi
+  shift; set -- "$B/Contents/MacOS/$X" "$@"
+  # native CFBundleGetMainBundle (LaunchServices check-in: bundle path for Apple Events, Dock, Cmd-Tab)
+  # ...unless a standard string key is not a string (SimCity 4: CFBundleVersion is an
+  # integer): native OpenGL/CF read the main bundle's version and crash on a CFNumber.
+  if [ -z "$OAH_NO_CFPP" ] && [ -f "$pl" ]; then
+    bad=$(/usr/bin/plutil -convert xml1 -o - "$pl" 2>/dev/null | awk '/<key>(CFBundleVersion|CFBundleShortVersionString|CFBundleIdentifier|CFBundleName|CFBundleExecutable|CFBundleDisplayName)<\/key>/{k=1;next} k{if($0 !~ /<string>/)print;k=0}')
+    if [ -z "$bad" ]; then export CFProcessPath="$1"; else echo "[rosetta] Info.plist has non-string standard keys; CFProcessPath not set" >&2; fi
+  fi
+fi
+# DYLD_* settings from the caller are meant for the PowerPC program (on Snow Leopard the same
+# process ran it; Wireshark's launcher script sets DYLD_LIBRARY_PATH to its bundled libraries):
+# hand them to the guest dyld, ahead of the Snow Leopard paths, and keep them from the translator.
+for v in LIBRARY_PATH FRAMEWORK_PATH FALLBACK_LIBRARY_PATH FALLBACK_FRAMEWORK_PATH; do
+  eval "val=\${DYLD_$v:-\$OAH_CALLER_DYLD_$v}"; unset OAH_CALLER_DYLD_$v
+  [ -n "$val" ] || continue
+  eval "export XYLD_$v=\"\$val\${XYLD_$v:+:\$XYLD_$v}\""
+  unset DYLD_$v
+done
+export OAH_GUEST_EXE="${OAH_GUEST_EXE:-$1}"
+# X11 programs (GTK Wireshark, GIMP...): Snow Leopard started X11 on demand. On Mojave XQuartz's
+# launchd socket exists only after a log-out following its installation, and a program started
+# without DISPLAY stopped with "cannot open display". If DISPLAY names no live server: take XQuartz's
+# launchd socket, else start XQuartz in the background and use :0. OAH_NO_X11START=1 leaves DISPLAY alone.
+oah_x_live() {
+  case "$1" in
+    /*) [ -S "$1" ];;
+    :*) local n=${1#:}; n=${n%%.*}; [ -S "/tmp/.X11-unix/X$n" ];;
+    *) return 1;;
+  esac
+}
+if [ -z "$OAH_NO_X11START" ] && [ -f "$1" ] && [ -d /Applications/Utilities/XQuartz.app ] && ! oah_x_live "$DISPLAY"; then
+  case "$(head -c 4 "$1" 2>/dev/null | od -An -tx1 | tr -d ' \n')" in
+    feedface|cafebabe)
+      if LC_ALL=C grep -q -i -E "libX11\.|gtk-x11|/usr/X11" "$1" 2>/dev/null; then
+        D=$(ls -d /private/tmp/com.apple.launchd.*/org.macosforge.xquartz:0 2>/dev/null | head -1)
+        if [ -n "$D" ] && [ -S "$D" ]; then export DISPLAY="$D"
+        else
+          if [ ! -S /tmp/.X11-unix/X0 ]; then
+            echo "[rosetta] X11 program: starting XQuartz" >&2
+            /usr/bin/open -g -a XQuartz
+            i=0; while [ ! -S /tmp/.X11-unix/X0 ] && [ $i -lt 60 ]; do sleep 0.25; i=$((i+1)); done
+          fi
+          export DISPLAY=:0
+        fi
+      fi;;
+  esac
+fi
+# Per-app settings an app cannot run without (an explicit setting in the environment wins).
+case "$(basename "$OAH_GUEST_EXE")" in
+  # Kid Pix Deluxe 4 refuses to start without a 16-bit ("thousands of colors") screen, which
+  # Mojave does not offer: report the main screen as 16 bpp to it (windows stay 32 bpp).
+  "Kid Pix Deluxe 4"*) export OAH_GD_DEPTH="${OAH_GD_DEPTH:-16}";;
+esac
+# CFM/PEF executables (Joy!peff) run under LaunchCFMApp, as Rosetta did. The fragment need not
+# start the data fork: its 'cfrg' resource can give an offset (VISE installers - Logic Platinum
+# 5.4's - keep an archive after a fragment at 0x30), so also take a file that is not Mach-O and has
+# a PEF container in its first 64 KB.
+oah_is_cfm() {
+  local m
+  [ "$(head -c 8 "$1" 2>/dev/null)" = "Joy!peff" ] && return 0
+  m=$(head -c 4 "$1" 2>/dev/null | od -An -tx1 | tr -d " \n")
+  case "$m" in feedface|cefaedfe|cafebabe|feedfacf|cffaedfe|"") return 1;; esac
+  head -c 65536 "$1" 2>/dev/null | LC_ALL=C grep -q "Joy!peff"
+}
+if oah_is_cfm "$1"; then
+  # A Mac OS 9 ("Classic") application links InterfaceLib instead of CarbonLib. Mac OS X ran
+  # those only inside the Classic environment, which Rosetta never had: say so instead of
+  # starting it and crashing on its first unresolved Toolbox import. OAH_ALLOW_CLASSIC=1 tries anyway.
+  if [ -z "$OAH_ALLOW_CLASSIC" ] && head -c 8388608 "$1" 2>/dev/null | LC_ALL=C grep -q InterfaceLib &&
+     ! head -c 8388608 "$1" 2>/dev/null | LC_ALL=C grep -q CarbonLib; then
+    echo "rosettus: $(basename "$1") is a Classic Mac OS 9 application (it links InterfaceLib, not CarbonLib)." >&2
+    echo "rosettus: Mac OS X ran those only in the Classic environment, which Rosetta never supported." >&2
+    echo "rosettus: Use a PowerPC Mac OS 9 emulator (SheepShaver, QEMU) for it." >&2
+    exit 86
+  fi
+  # CFBundleGetMainBundle must find the app, not the translator.
+  export CFProcessPath="$1"
+  set -- "$F/Carbon.framework/Versions/A/Support/LaunchCFMApp" "$@"
+fi
+export DYLD_INSERT_LIBRARIES="$ROOT/liboah_mojave.dylib${OAH_EXTRA_INSERT:+:$OAH_EXTRA_INSERT}"
+# Run the translator through a hard link inside the wrapper bundle when the wrapper asks for one
+# (OAH_TRANSLATE_LINK): the process then belongs to that bundle for the system - the admin password
+# prompt says "Adobe Installer wants to make changes" instead of "translate_mojave", and Activity
+# Monitor / Force Quit / TCC prompts show the app. Children (PowerPC tools it runs) do not inherit it.
+T="$ROOT/translate_mojave"
+if [ -n "$OAH_TRANSLATE_LINK" ]; then
+  if [ ! "$OAH_TRANSLATE_LINK" -ef "$T" ]; then rm -f "$OAH_TRANSLATE_LINK" 2>/dev/null; ln "$T" "$OAH_TRANSLATE_LINK" 2>/dev/null; fi
+  [ "$OAH_TRANSLATE_LINK" -ef "$T" ] && T="$OAH_TRANSLATE_LINK"
+fi
+unset OAH_TRANSLATE_LINK
+exec "$T" "$@"

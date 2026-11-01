@@ -1,0 +1,38 @@
+libm 0.5        sin 0.47942553860420301 exp 1.6487212707001282 log -0.69314718055994529 pow 0.77378249677119493
+libm 1          sin 0.8414709848078965 exp 2.7182818284590451 log 0 pow 1
+libm 2.71828    sin 0.41078129092143595 exp 15.15426223452277 log 0.99999999983112664 pow 1.4477346145728653
+libm 10         sin -0.54402111088936989 exp 22026.465794806718 log 2.3025850929940459 pow 2.344228815319922
+libm -3.25      sin 0.10819513453010837 exp 0.038774207831722009 log 1.1786549963416462 pow 1.5466670859314857
+libm 1e-300     sin 1e-300 exp 1 log -690.77552789821368 pow 1.000000000000003e-111
+libm 1e+300     sin -0.81788191211590866 exp 2.7182818284590451 log 690.77552789821368 pow 9.9999999999999689e+110
+atan2/hypot/cbrt       2.677945044588987 4.9999999999999995e+200 -3.018405368398843
+lrint/round            2 4 -3
+float ops              1 0
+strtod                 1.7976931348623157e+308 nan-ok
+printf                 0003.142|42   |-1.234500e+03|beef|s
+qsort                  0 1 2 3 4 5 6 7 8 9
+strftime               2001-09-09 01:46:40 Sun 252
+localtime chicago      20 -18000 CDT
+pthreads               400000
+MPTask                 0 4242
+uname                  Darwin 10.x
+hw.byteorder           4321
+hw.machine             0 Power Macintosh
+hw.cputype             18
+hw.optional.altivec    0 1
+Gestalt(sysa)          2
+Gestalt(cput)          10c
+Gestalt(ppcf)          0 11
+Gestalt(qtim)          766
+Gestalt(ram)           0 1
+mach_port_allocate     0
+vm_allocate            0 1
+endian                 12345678 00000012
+NumToString            -123456
+StringToNum            -1220193652
+DateToSeconds          3160907100
+clocks                 1 1
+NewPtrClear            0 100
+SetHandleSize          0 5000
+HGetState-locked       1
+TEC macroman->utf8     0 c3 a9 78 e2 80 93

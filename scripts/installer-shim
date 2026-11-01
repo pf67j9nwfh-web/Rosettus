@@ -1,0 +1,74 @@
+#!/bin/bash
+# Rosettus: /usr/sbin/installer as started by a PowerPC program (the CS2 installer runs
+# "installer -pkg X -target /" for each package).
+#
+# Mojave's installd runs a package's preflight/postflight/InstallationCheck/VolumeCheck scripts
+# itself, outside Rosettus, and those scripts call PowerPC helper tools (Adobe's invokeSelfHeal,
+# MakeAnAlias, HFSTest...): "Bad CPU type in executable", and the package fails.
+# So hand installer a shadow copy of the package: everything is a symlink to the original
+# except the scripts, which become small wrappers that run the original script with Rosettus's
+# own bash and libppcexec.dylib (PowerPC tools then run through Rosettus, as Rosetta did on 10.6).
+# OAH_NO_PKGSHIM=1: run installer unchanged.
+ROOT="${OAH_ROSETTUS_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+export OAH_IN_PKGSHIM=1    # libppcexec.dylib: our own /usr/sbin/installer call is not redirected here again
+[ -n "$OAH_NO_PKGSHIM" ] && exec /usr/sbin/installer "$@"
+[ -x "$ROOT/native/bash" ] && [ -f "$ROOT/native/libppcexec.dylib" ] || exec /usr/sbin/installer "$@"
+
+TMPD="/tmp/rosettus-pkg.$$"
+shadow() {   # shadow <pkg>  -> prints the shadow path (or the original when nothing to wrap)
+    local src="${1%/}" base dst f b wrapped=0 first
+    [ -d "$src/Contents" ] || { echo "$src"; return; }
+    base=$(basename "$src"); dst="$TMPD/$base"
+    mkdir -p "$dst/Contents/Resources" || { echo "$src"; return; }
+    for f in "$src"/Contents/* "$src"/Contents/.[!.]*; do
+        [ -e "$f" ] || continue
+        b=$(basename "$f"); [ "$b" = Resources ] && continue
+        ln -s "$f" "$dst/Contents/$b"
+    done
+    for f in "$src"/Contents/Resources/* "$src"/Contents/Resources/.[!.]*; do
+        [ -e "$f" ] || continue
+        b=$(basename "$f")
+        case "$b" in
+        preflight|postflight|preinstall|postinstall|preupgrade|postupgrade|InstallationCheck|VolumeCheck)
+            first=$(head -c 64 "$f" | head -1)
+            case "$first" in
+            "#!/bin/sh"*|"#!/bin/bash"*)
+                sh=sh; case "$first" in "#!/bin/bash"*) sh=bash;; esac
+                cat > "$dst/Contents/Resources/$b" <<EOF
+#!/bin/sh
+# Rosettus wrapper (installer-shim): run the package's own script so that it can use PowerPC tools
+export OAH_ROSETTUS_ROOT="$ROOT"
+export DYLD_INSERT_LIBRARIES="$ROOT/native/libppcexec.dylib"
+exec -a $sh "$ROOT/native/bash" "$f" "\$@"
+EOF
+                chmod 755 "$dst/Contents/Resources/$b"; wrapped=1; continue;;
+            esac;;
+        esac
+        ln -s "$f" "$dst/Contents/Resources/$b"
+    done
+    if [ $wrapped = 1 ]; then echo "$dst"; else rm -rf "$dst"; echo "$src"; fi
+}
+
+args=(); next=
+for a in "$@"; do
+    if [ "$next" = pkg ]; then a=$(shadow "$a"); next=; fi
+    [ "$a" = "-pkg" -o "$a" = "-package" ] && next=pkg
+    args+=("$a")
+done
+echo "[installer-shim] /usr/sbin/installer ${args[*]}" >&2
+# Mojave's installer -verboseR prints empty "installer:STATUS:" / "installer:PHASE:" lines, which
+# 10.4/10.5 did not. Adobe's parser (NSScanner, newline skipped as whitespace) then took the next
+# line - "installer:%42.0" - as the status text: the progress bar never moved and the status line
+# read "installer:%100.000000". Drop the empty lines, one line at a time.
+OAH_IN_PKGSHIM=1 /usr/sbin/installer "${args[@]}" | while IFS= read -r l; do
+    case "$l" in
+    "installer:STATUS:"|"installer:PHASE:"|"installer:STATUS: "|"installer:PHASE: ") ;;
+    # 10.4 put the step ("Writing files...") in STATUS lines, which Adobe shows under the bar;
+    # Mojave only sends it as PHASE: send it as both.
+    "installer:PHASE:"*) printf '%s\ninstaller:STATUS:%s\n' "$l" "${l#installer:PHASE:}";;
+    *) printf '%s\n' "$l";;
+    esac
+done
+rc=${PIPESTATUS[0]}
+rm -rf "$TMPD"
+exit $rc

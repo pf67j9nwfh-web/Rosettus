@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnableTransactions</key>
+	<true/>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>OAH_AGENT</key>
+		<string>com.rosettus.ppc.pboard</string>
+		<key>OAH_NAMEBROKER</key>
+		<string>1</string>
+	</dict>
+	<key>Label</key>
+	<string>com.rosettus.ppc.pboard</string>
+	<key>MachServices</key>
+	<dict>
+		<key>com.rosettus.ppc.namebroker</key>
+		<true/>
+		<key>com.rosettus.ppc.pasteboard.1</key>
+		<true/>
+	</dict>
+	<key>ProgramArguments</key>
+	<array>
+		<string>__ROOT__/rosettus</string>
+		<string>__ROOT__/usr/sbin/pboard</string>
+	</array>
+	<key>StandardErrorPath</key>
+	<string>/tmp/rosettus_pboard.log</string>
+	<key>StandardOutPath</key>
+	<string>/tmp/rosettus_pboard.log</string>
+</dict>
+</plist>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnableTransactions</key>
+	<true/>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>OAH_AGENT</key>
+		<string>com.rosettus.ppc.coreservicesd</string>
+		<key>OAH_TASKBROKER</key>
+		<string>1</string>
+	</dict>
+	<key>Label</key>
+	<string>com.rosettus.ppc.coreservicesd</string>
+	<key>MachServices</key>
+	<dict>
+		<key>com.rosettus.ppc.CoreServices.coreservicesd</key>
+		<dict>
+			<key>ResetAtClose</key>
+			<true/>
+		</dict>
+		<key>com.rosettus.ppc.taskbroker</key>
+		<dict/>
+	</dict>
+	<key>ProgramArguments</key>
+	<array>
+		<string>__ROOT__/rosettus</string>
+		<string>__ROOT__/System/Library/CoreServices/coreservicesd</string>
+	</array>
+	<key>StandardErrorPath</key>
+	<string>/tmp/rosettus_coreservicesd.log</string>
+	<key>StandardOutPath</key>
+	<string>/tmp/rosettus_coreservicesd.log</string>
+</dict>
+</plist>

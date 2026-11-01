@@ -1,0 +1,10 @@
+# exports and Apple files never belong in the repository
+*.tar.gz
+/root/
+translate*
+!import/patches/translate.rpatch
+*.prebridge
+# build products that are rebuilt locally (bin/ holds the release binaries)
+src/**/*.o
+.DS_Store
+dist/

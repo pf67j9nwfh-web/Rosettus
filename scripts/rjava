@@ -1,0 +1,34 @@
+#!/bin/bash
+# rjava [-j VERSION] [TOOL] ARGS... - run a PowerPC Java tool under Rosettus.
+#   rjava -version                  java from the default PowerPC JDK (Java 5 when installed)
+#   rjava -j 1.4 -jar App.jar       another installed version (1.3, 1.4, 1.5 or 1.3.1, 1.4.2, 1.5.0)
+#   rjava javac Hello.java          any tool in the JDK's Commands folder (javac, jar, javadoc, ...)
+# The PowerPC runtimes come from a PowerPC Mac: import/tiger/export_java_from_tiger.sh, then
+# tools/install_java.sh.
+ROOT="$(cd "$(dirname "$0")" && pwd -P)"
+JV="$ROOT/System/Library/Frameworks/JavaVM.framework/Versions"
+V=CurrentJDK
+if [ "$1" = "-j" ]; then V="$2"; shift 2; fi
+if [ ! -d "$JV/$V/Commands" ]; then
+  echo "rjava: no PowerPC Java $V installed in $JV." >&2
+  echo "       Make an archive on a PowerPC Mac with import/tiger/export_java_from_tiger.sh, then run" >&2
+  echo "       $ROOT/tools/install_java.sh on it." >&2
+  exit 1
+fi
+# A short version name can be a folder of its own: on Tiger, Versions/1.3 holds only jikes. Use the
+# newest full version that starts with it (1.3 -> 1.3.1) when it has no java.
+if [ ! -x "$JV/$V/Commands/java" ]; then
+  for d in $(ls -d "$JV/$V".* 2>/dev/null | sort -r); do
+    if [ -x "$d/Commands/java" ]; then V="$(basename "$d")"; break; fi
+  done
+fi
+TOOL=java
+case "$1" in
+  ""|-*) ;;
+  *) [ -x "$JV/$V/Commands/$1" ] && { TOOL="$1"; shift; };;
+esac
+if [ ! -x "$JV/$V/Commands/$TOOL" ]; then
+  echo "rjava: PowerPC Java $V has no $TOOL." >&2
+  exit 1
+fi
+exec "$ROOT/rosettus" "$JV/$V/Commands/$TOOL" "$@"
